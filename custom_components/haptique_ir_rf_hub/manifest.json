@@ -1,5 +1,5 @@
 {
-  "domain": "haptique_gateway",
+  "domain": "haptique_ir_rf_hub",
   "name": "Haptique IR/RF hub",
   "codeowners": [],
   "config_flow": true,
