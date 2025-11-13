@@ -1,0 +1,11 @@
+{
+  "domain": "haptique_gateway",
+  "name": "Haptique IR/RF hub",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/yourusername/haptique-IR-RF-hub",
+  "iot_class": "local_push",
+  "requirements": ["aiohttp>=3.8.0", "websockets>=10.0"],
+  "version": "1.0.0"
+}
