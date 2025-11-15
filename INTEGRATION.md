@@ -125,37 +125,9 @@ automation:
       - platform: time
         at: "07:00:00"
     action:
-      - service: haptique_ir_rf_hub.send_ir
+      - service: haptique_ir_rf_hub.send_ir_saved
         data:
           name: "tv_power"
-```
-
-### Control AC based on temperature
-```yaml
-automation:
-  - alias: "Auto Climate Control"
-    trigger:
-      - platform: numeric_state
-        entity_id: sensor.living_room_temperature
-        above: 26
-    action:
-      - service: haptique_ir_rf_hub.send_ir
-        data:
-          name: "ac_cool_24"
-```
-
-### RF fan control
-```yaml
-automation:
-  - alias: "Fan Auto On"
-    trigger:
-      - platform: numeric_state
-        entity_id: sensor.bedroom_humidity
-        above: 70
-    action:
-      - service: haptique_ir_rf_hub.send_rf
-        data:
-          name: "ceiling_fan_high"
 ```
 
 ## Troubleshooting
