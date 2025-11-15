@@ -1,0 +1,10 @@
+[run]
+source = custom_components/haptique_ir_rf_hub
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == "__main__":
+    if TYPE_CHECKING:
+    @abstractmethod
