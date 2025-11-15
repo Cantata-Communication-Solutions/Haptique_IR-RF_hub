@@ -119,7 +119,7 @@ Save the last received RF command.
 
 ### Turn on TV at specific time
 ```yaml
-automation:
+
   - alias: "Morning TV On"
     trigger:
       - platform: time
@@ -128,6 +128,28 @@ automation:
       - service: haptique_ir_rf_hub.send_ir_saved
         data:
           name: "tv_power"
+```
+### Turn on TV RAW code
+```yaml
+alias: TV ON RAW
+description: ""
+trigger:
+  - platform: time
+    at: "07:00:00"
+
+action:
+  - service: haptique_ir_rf_hub.send_ir_code
+    data:
+      frequency: 38000
+      duty: 33
+      raw_data:
+        [4540,4495,573,1670,575,1671,574,1670,574,548,575,548,574,549,575,547,576,547,
+         575,1670,576,1669,576,1669,576,546,576,547,576,547,577,545,577,546,576,547,
+         576,1669,608,515,576,546,577,546,607,516,610,512,577,545,610,1636,607,515,
+         577,1668,607,1638,609,1635,614,1631,610,1635,613,1632,614,300]
+
+mode: single
+
 ```
 
 ## Troubleshooting
