@@ -160,9 +160,9 @@ cards:
    - **Option B**: Use VS Code add-on
    - **Option C**: Use SSH or Samba to access the files directly
 
-2. Open the `configuration.yaml` file
+2. **First, edit `configuration.yaml`**:
 
-3. Add the following code at the end of the file (make sure the indentation is correct):
+Add the following code at the end of the file (make sure the indentation is correct):
 
 ```yaml
 input_text:
@@ -181,64 +181,80 @@ input_boolean:
     name: "Save IR Trigger"
     icon: mdi:content-save
 
-automation:
-  - alias: "Save RF Command"
-    mode: single
-    trigger:
-      - platform: state
-        entity_id: input_boolean.save_rf_trigger
-        to: "on"
-    condition:
-      - condition: template
-        value_template: "{{ states('input_text.rf_command_name') | length > 0 }}"
-    action:
-      - service: haptique_ir_rf_hub.save_rf_last
-        data:
-          name: "{{ states('input_text.rf_command_name') }}"
-      - delay: "00:00:00.5"
-      - service: persistent_notification.create
-        data:
-          title: "✅ RF Saved"
-          message: "Command saved!"
-      - service: input_text.set_value
-        data:
-          entity_id: input_text.rf_command_name
-          value: ""
-      - service: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.save_rf_trigger
-
-  - alias: "Save IR Command"
-    mode: single
-    trigger:
-      - platform: state
-        entity_id: input_boolean.save_ir_trigger
-        to: "on"
-    condition:
-      - condition: template
-        value_template: "{{ states('input_text.ir_command_name') | length > 0 }}"
-    action:
-      - service: haptique_ir_rf_hub.save_ir_last
-        data:
-          name: "{{ states('input_text.ir_command_name') }}"
-          frame: "B"
-      - delay: "00:00:00.5"
-      - service: persistent_notification.create
-        data:
-          title: "✅ IR Saved"
-          message: "Command saved!"
-      - service: input_text.set_value
-        data:
-          entity_id: input_text.ir_command_name
-          value: ""
-      - service: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.save_ir_trigger
+# Make sure this line exists (it tells HA to use automations.yaml)
+automation: !include automations.yaml
 ```
 
-4. Save the file
+3. Save the `configuration.yaml` file
 
-5. **Restart Home Assistant**:
+4. **Next, edit `automations.yaml`**:
+
+Open the `automations.yaml` file (it's in the same folder as configuration.yaml). Add the following automations:
+
+```yaml
+- alias: "Save RF Command"
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: input_boolean.save_rf_trigger
+      to: "on"
+  condition:
+    - condition: template
+      value_template: "{{ states('input_text.rf_command_name') | length > 0 }}"
+  action:
+    - service: haptique_ir_rf_hub.save_rf_last
+      data:
+        name: "{{ states('input_text.rf_command_name') }}"
+    - delay: "00:00:00.5"
+    - service: persistent_notification.create
+      data:
+        title: "✅ RF Saved"
+        message: "Command saved!"
+    - service: input_text.set_value
+      data:
+        entity_id: input_text.rf_command_name
+        value: ""
+    - service: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.save_rf_trigger
+
+- alias: "Save IR Command"
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: input_boolean.save_ir_trigger
+      to: "on"
+  condition:
+    - condition: template
+      value_template: "{{ states('input_text.ir_command_name') | length > 0 }}"
+  action:
+    - service: haptique_ir_rf_hub.save_ir_last
+      data:
+        name: "{{ states('input_text.ir_command_name') }}"
+        frame: "B"
+    - delay: "00:00:00.5"
+    - service: persistent_notification.create
+      data:
+        title: "✅ IR Saved"
+        message: "Command saved!"
+    - service: input_text.set_value
+      data:
+        entity_id: input_text.ir_command_name
+        value: ""
+    - service: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.save_ir_trigger
+```
+
+**Important Notes:**
+- If `automations.yaml` already has automations (from GUI), just add these two at the end
+- If the file is empty or shows `[]`, replace it with the code above
+- DO NOT put automations in `configuration.yaml` - this disables the GUI automation editor!
+- By using `automations.yaml`, you can still create automations from the GUI
+
+5. Save the `automations.yaml` file
+
+6. **Restart Home Assistant**:
    - Go to **Settings** > **System** > **Check Configuration**
    - If no errors are shown, click **Restart**
    - Wait for Home Assistant to restart
@@ -492,6 +508,19 @@ automation:
 3. Try re-learning the command
 4. Ensure there's a clear line of sight between Hub and device
 5. Check if the device you're controlling is powered on
+
+### Problem: Can't Create Automations from GUI After Setup
+
+**Cause**: If you put automations directly in `configuration.yaml` instead of `automations.yaml`, Home Assistant disables the GUI editor.
+
+**Solution:**
+1. Make sure your `configuration.yaml` has: `automation: !include automations.yaml`
+2. Move the two learning automations from `configuration.yaml` to `automations.yaml`
+3. Keep only `input_text` and `input_boolean` in `configuration.yaml`
+4. Restart Home Assistant
+5. GUI automation editor should now work
+
+See the detailed fix guide included in the documentation files.
 
 ### Problem: Configuration Errors After Adding YAML
 
