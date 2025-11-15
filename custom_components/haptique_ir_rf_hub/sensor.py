@@ -41,12 +41,16 @@ class HaptiqueBaseSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._entry = entry
         
+        # Get version from coordinator data
+        status = coordinator.data.get("status", {})
+        version = status.get("fw_ver") or status.get("version", "Unknown")
+        
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.title,
             manufacturer=MANUFACTURER,
             model=MODEL,
-            sw_version=coordinator.data.get("status", {}).get("version", "Unknown"),
+            sw_version=version,
         )
 
 
@@ -64,8 +68,13 @@ class HaptiqueWifiStatusSensor(HaptiqueBaseSensor):
     def native_value(self):
         """Return the state of the sensor."""
         status = self.coordinator.data.get("status", {})
-        wifi_status = status.get("wifi_status", "unknown")
         
+        # Check for sta_ok field (boolean) first
+        if "sta_ok" in status:
+            return "Connected" if status.get("sta_ok") else "Disconnected"
+        
+        # Fall back to wifi_status (numeric) if sta_ok not present
+        wifi_status = status.get("wifi_status", "unknown")
         if wifi_status == 3:
             return "Connected"
         elif wifi_status == 6:
@@ -74,14 +83,39 @@ class HaptiqueWifiStatusSensor(HaptiqueBaseSensor):
             return f"Status {wifi_status}"
 
     @property
+    def icon(self):
+        """Return icon based on connection status."""
+        status = self.coordinator.data.get("status", {})
+        
+        # Check sta_ok first
+        if "sta_ok" in status:
+            return "mdi:wifi" if status.get("sta_ok") else "mdi:wifi-off"
+        
+        # Fall back to wifi_status
+        wifi_status = status.get("wifi_status", 0)
+        return "mdi:wifi" if wifi_status == 3 else "mdi:wifi-off"
+
+    @property
     def extra_state_attributes(self):
         """Return additional attributes."""
         status = self.coordinator.data.get("status", {})
-        return {
-            "ssid": status.get("ssid", "N/A"),
-            "rssi": status.get("rssi", 0),
-            "local_ip": status.get("local_ip", "N/A"),
-        }
+        attrs = {}
+        
+        # Try both field name variations
+        if "sta_ssid" in status:
+            attrs["ssid"] = status.get("sta_ssid", "N/A")
+        else:
+            attrs["ssid"] = status.get("ssid", "N/A")
+        
+        attrs["rssi"] = status.get("rssi", 0)
+        
+        # Try both IP field variations
+        if "sta_ip" in status:
+            attrs["local_ip"] = status.get("sta_ip", "N/A")
+        else:
+            attrs["local_ip"] = status.get("local_ip", "N/A")
+        
+        return attrs
 
 
 class HaptiqueRfCountSensor(HaptiqueBaseSensor):
@@ -98,19 +132,38 @@ class HaptiqueRfCountSensor(HaptiqueBaseSensor):
     @property
     def native_value(self):
         """Return the state of the sensor."""
+        # Try getting from rf_status first
         rf_status = self.coordinator.data.get("rf_status", {})
-        return rf_status.get("rx_count", 0)
+        if "rx_count" in rf_status:
+            return rf_status.get("rx_count", 0)
+        
+        # Fall back to status.rf.rx_count
+        status = self.coordinator.data.get("status", {})
+        rf_data = status.get("rf", {})
+        return rf_data.get("rx_count", 0)
 
     @property
     def extra_state_attributes(self):
         """Return additional attributes."""
+        # Try rf_status first
         rf_status = self.coordinator.data.get("rf_status", {})
+        if rf_status:
+            return {
+                "last_code": rf_status.get("last_code", 0),
+                "last_bits": rf_status.get("last_bits", 0),
+                "last_protocol": rf_status.get("last_protocol", 0),
+                "rf_rx_pin": rf_status.get("rf_rx_pin", 0),
+                "rf_tx_pin": rf_status.get("rf_tx_pin", 0),
+            }
+        
+        # Fall back to status.rf
+        status = self.coordinator.data.get("status", {})
+        rf_data = status.get("rf", {})
         return {
-            "last_code": rf_status.get("last_code", 0),
-            "last_bits": rf_status.get("last_bits", 0),
-            "last_protocol": rf_status.get("last_protocol", 0),
-            "rf_rx_pin": rf_status.get("rf_rx_pin", 0),
-            "rf_tx_pin": rf_status.get("rf_tx_pin", 0),
+            "last_code": rf_data.get("last_code", 0),
+            "last_bits": rf_data.get("last_bits", 0),
+            "rf_rx_pin": status.get("rf_rx", 0),
+            "rf_tx_pin": status.get("rf_tx", 0),
         }
 
 
@@ -128,7 +181,8 @@ class HaptiqueVersionSensor(HaptiqueBaseSensor):
     def native_value(self):
         """Return the state of the sensor."""
         status = self.coordinator.data.get("status", {})
-        return status.get("version", "Unknown")
+        # Try fw_ver first (actual API field), fall back to version
+        return status.get("fw_ver") or status.get("version", "Unknown")
 
 
 class HaptiqueHostnameSensor(HaptiqueBaseSensor):
@@ -162,7 +216,8 @@ class HaptiqueIpAddressSensor(HaptiqueBaseSensor):
     def native_value(self):
         """Return the state of the sensor."""
         status = self.coordinator.data.get("status", {})
-        return status.get("local_ip", "N/A")
+        # Try sta_ip first (actual API field), fall back to local_ip
+        return status.get("sta_ip") or status.get("local_ip", "N/A")
 
     @property
     def extra_state_attributes(self):
